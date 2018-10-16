@@ -128,13 +128,8 @@ public class CollectActivity extends BaseActivity {
         new WorkThread().start();
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        drawTimer = new Timer();
-        drawTask = new TimerTask() {
-            @Override
-            public void run() {
-                demoView.setData(dataList);
-            }
-        };
+        xdpi = metrics.xdpi;
+        ydpi = metrics.ydpi;
     }
 
 
@@ -159,7 +154,14 @@ public class CollectActivity extends BaseActivity {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
-
+                    drawTimer = new Timer();
+                    demoView.setResolution(xdpi,ydpi);
+                    drawTask = new TimerTask() {
+                        @Override
+                        public void run() {
+                            demoView.setData(dataList);
+                        }
+                    };
                     drawTimer.schedule(drawTask,0,30);//start draw
 //                    new Thread(new Runnable() {
 //                        @Override
