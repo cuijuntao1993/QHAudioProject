@@ -1,0 +1,75 @@
+apply plugin: 'com.android.application'
+
+android {
+
+    dataBinding {
+        enabled = true
+    }
+
+    compileSdkVersion 26
+    buildToolsVersion '27.0.3'
+
+    defaultConfig {
+        applicationId "com.gz.audio"
+        minSdkVersion 21
+        targetSdkVersion 26
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['libs']
+        }
+    }
+
+        signingConfigs {
+        config {
+            storePassword "gzvoice"
+            keyAlias "voice"
+            keyPassword "gzvoice"
+            storeFile file("voice.jks")
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.config
+        }
+        debug {
+            signingConfig signingConfigs.config
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+    testCompile 'junit:junit:4.12'
+    compile 'com.android.support:appcompat-v7:26.+'
+    compile 'com.android.support:design:26.+'
+    //  6.0 动态权限申请
+    compile 'pub.devrel:easypermissions:0.2.1'
+    // eventbus 时间分发
+    compile 'org.greenrobot:eventbus:3.0.0'
+    //    gson 解析
+    compile 'com.google.code.gson:gson:2.8.0'
+    //    okgo  相关jar包
+    compile 'com.squareup.okhttp3:okhttp:3.8.1'
+    compile 'com.squareup.okio:okio:1.13.0'
+    // 沉浸式状态栏
+    compile 'com.gyf.barlibrary:barlibrary:2.3.0'
+    compile files('src/main/libs/achartengine-1.2.0.jar')
+    //litpal数据库框架
+    compile 'org.litepal.android:core:2.0.0'
+    compile 'com.google.code.gson:gson:2.6.2'
+    implementation files('src/main/libs/edf4j-1.0b.jar')
+    implementation files('src/main/libs/FMDemodulator.jar')
+    implementation files('src/main/libs/JTransforms-3.1-with-dependencies.jar')
+}

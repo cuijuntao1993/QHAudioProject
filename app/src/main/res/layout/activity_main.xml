@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <data class=".MainBinding" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/app_title_size"
+            android:layout_marginTop="@dimen/dp_20"
+            android:background="@color/top_bar_color"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:gravity="center"
+                android:text="首页"
+                android:textColor="@color/app_title_color"
+                android:textSize="@dimen/app_title_text_size" />
+
+            <LinearLayout
+                android:id="@+id/setting"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:background="@color/top_bar_color"
+                android:gravity="center"
+
+                android:orientation="horizontal"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp">
+
+                <ImageView
+                    android:layout_width="@dimen/dp_28"
+                    android:layout_height="@dimen/dp_28"
+                    android:background="@mipmap/setting" />
+            </LinearLayout>
+        </RelativeLayout>
+
+        <include layout="@layout/public_main_line" />
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="220dp"
+            android:background="@mipmap/home_banner" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/history"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@drawable/public_history_selector"
+                android:gravity="center"
+                android:text="历史记录"
+                android:textColor="@color/white"
+                android:textSize="@dimen/app_base_text_size" />
+
+            <TextView
+                android:id="@+id/collect"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@drawable/public_collect_selector"
+                android:gravity="center"
+                android:text="开始采录"
+                android:textColor="@color/white"
+                android:textSize="@dimen/app_base_text_size" />
+
+        </LinearLayout>
+
+        <ListView
+            android:id="@+id/main_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+        </ListView>
+    </LinearLayout>
+</layout>

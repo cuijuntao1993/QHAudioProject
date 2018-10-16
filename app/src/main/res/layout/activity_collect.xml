@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <data class=".CollectBinding" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/app_title_size"
+            android:layout_marginTop="@dimen/dp_20"
+            android:background="@color/white"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:gravity="center"
+                android:text="采集"
+                android:textColor="@color/app_title_color"
+                android:textSize="@dimen/app_title_text_size" />
+
+            <LinearLayout
+                android:id="@+id/back"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:background="@drawable/public_bg_selector"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingLeft="5dp"
+                android:paddingRight="8dp">
+
+                <ImageView
+                    android:layout_width="@dimen/dp_26"
+                    android:layout_height="@dimen/dp_26"
+                    android:background="@mipmap/public_back" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="回首页"
+                    android:textColor="@color/app_back_color"
+                    android:textSize="@dimen/app_base_text_size" />
+            </LinearLayout>
+        </RelativeLayout>
+
+        <include layout="@layout/public_main_line" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_gravity="center">
+
+        <com.gz.audio.widget.TimerCountdownView
+            android:id="@+id/countdownview"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_centerInParent="true" />
+
+        <TextView
+            android:id="@+id/timer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="搜寻中"
+            android:textColor="@color/app_title_color"
+            android:textSize="18sp" />
+        <ImageView
+            android:id="@+id/img_xin"
+            android:layout_marginTop="42dp"
+            android:layout_marginLeft="289dp"
+            android:layout_width="@dimen/dp_13"
+            android:layout_height="@dimen/dp_14"
+            android:src="@mipmap/xin"/>
+
+        <TextView
+            android:id="@+id/tv_xin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/img_xin"
+            android:layout_marginStart="50dp"
+            android:layout_toEndOf="@+id/countdownview"
+            android:text="76 BMP"
+            android:textSize="15sp" />
+    </RelativeLayout>
+
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@mipmap/xindian_back">
+
+            <com.gz.audio.ui.xindian.xindian_backView
+                android:id="@+id/ecg_data_ecgView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone"/>
+            <com.gz.audio.ui.xindian.DemoView
+                android:id="@+id/demoview"
+                app:border_color="#ea5514"
+                app:border_width="1dp"
+                android:background="@color/trans"
+                android:layout_centerHorizontal="true"
+                android:layout_width="fill_parent"
+                android:layout_height="260dp"/>
+        </RelativeLayout>
+    </LinearLayout>
+</layout>

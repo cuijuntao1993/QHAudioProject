@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <data class=".HistoryBinding" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <include layout="@layout/public_main_line" />
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/app_title_size"
+            android:background="@color/white"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:gravity="center"
+                android:text="历史记录"
+                android:textColor="@color/app_title_color"
+                android:textSize="@dimen/app_title_text_size" />
+
+            <LinearLayout
+                android:id="@+id/back"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:background="@drawable/public_bg_selector"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingLeft="5dp"
+                android:paddingRight="8dp">
+
+                <ImageView
+                    android:layout_width="@dimen/dp_26"
+                    android:layout_height="@dimen/dp_26"
+                    android:background="@mipmap/public_back" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="回首页"
+                    android:textColor="@color/app_back_color"
+                    android:textSize="@dimen/app_base_text_size" />
+            </LinearLayout>
+        </RelativeLayout>
+
+        <include layout="@layout/public_main_line" />
+
+        <TextView
+            android:id="@+id/history_tv_top"
+            android:layout_width="match_parent"
+            android:layout_height="41dp"
+            android:background="@color/history_top"
+            android:textSize="15sp"
+            android:text="3/7"
+            android:textColor="@color/white"
+            android:gravity="center"/>
+
+        <ListView
+            android:id="@+id/history_listview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </LinearLayout>
+</layout>
