@@ -85,8 +85,9 @@ public class AudioRecorder {
 //        bufferSizeInBytes = 4096 * 2;
         audioRecord = new AudioRecord(AUDIO_INPUT, AUDIO_SAMPLE_RATE, AUDIO_CHANNEL, AUDIO_ENCODING, bufferSizeInBytes);
         this.fileName = fileName;
-        status = Status.STATUS_READY;
         this.tel = telephone;
+        status = Status.STATUS_READY;
+
     }
 
     /**

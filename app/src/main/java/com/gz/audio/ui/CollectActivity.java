@@ -48,6 +48,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.Date;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -85,8 +86,10 @@ public class CollectActivity extends BaseActivity {
     private TimerCountdownView countdownview;
     private View back;
     TextView timer;
-    private boolean bl_check = true;
-    private boolean is_write = false;
+    private boolean bl_check = true;//check signal strength
+    private boolean is_write = false;//start decode data
+    private boolean found_ecg = false;//find ecg signal for the first time
+    private long first_found_ecg_signal_time = 0;
 
     //心电图模拟
     private xindian_backView ecgView;
@@ -108,7 +111,7 @@ public class CollectActivity extends BaseActivity {
     int bf_count = 1;
     //建立流写入文件
     DataOutputStream fos = null;
-    private int DECODE_STEP = 16384;
+    private int DECODE_STEP = 7938;
     private Timer drawTimer;
     private TimerTask drawTask;
     private float xdpi;
@@ -143,26 +146,39 @@ public class CollectActivity extends BaseActivity {
             switch (msg.what) {
                 case 1:
                     //信号合格,开启录音
-                    showLoading("初始化中..");
+
                     initRecording();
+                    demoView.setResolution(xdpi,ydpi);
                     break;
                 case 2:
-                    try {
-                        //间隔30毫秒
-                        sleep(1000);
-                        } catch (InterruptedException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
+//                    try {
+//                        //间隔30毫秒
+//                        sleep(1000);
+//                        } catch (InterruptedException e) {
+//                        // TODO Auto-generated catch block
+//                        e.printStackTrace();
+//                    }
                     drawTimer = new Timer();
                     demoView.setResolution(xdpi,ydpi);
                     drawTask = new TimerTask() {
                         @Override
                         public void run() {
-                            demoView.setData(dataList);
+                            runOnUiThread(new Runnable() {
+                                public void run() {
+                                    demoView.setData(dataList);
+                                }
+                            });
                         }
                     };
                     drawTimer.schedule(drawTask,0,30);//start draw
+
+//                    demoView.setData(dataList);
+//                    try{
+//                        sleep(30);
+//                    }catch (InterruptedException e){
+//                        e.printStackTrace();
+//                    }
+//                    preHandler.sendEmptyMessage(2);
 //                    new Thread(new Runnable() {
 //                        @Override
 //                        public void run() {
@@ -249,15 +265,24 @@ public class CollectActivity extends BaseActivity {
                         while (curPos+remainSize >= tmpByteBuffer.length){
                             System.arraycopy(dataB,srcStartPos,tmpByteBuffer,curPos,tmpByteBuffer.length-curPos);
                             short[] data = BytesTransUtil.getInstance().Bytes2Shorts(tmpByteBuffer);
-                            //int quality = signal_quality(data);
-                            int quality = 1;
+                            int quality = signal_quality(data);
+                            //int quality = 1;
                             if (quality >= 1 && bl_check) {
                                 //从全局池中返回一个message实例，避免多次创建message（如new Message）
-                                bl_check = false;
-                                Log.d("test_cui_quality", ">2 is check ");
-                                Message msg = Message.obtain();
-                                msg.what = 1;   //标志消息的标志
-                                preHandler.sendEmptyMessage(msg.what);
+                                if(!found_ecg){
+                                    first_found_ecg_signal_time = new Date().getTime();
+                                    found_ecg = true;
+                                }else{
+                                    long time = new Date().getTime();
+                                    if(time-first_found_ecg_signal_time>=1000){//if signal last for 1 second
+                                        Log.d("test_cui_quality", ">2 is check ");
+                                        Message msg = Message.obtain();
+                                        msg.what = 1;   //标志消息的标志
+                                        preHandler.sendEmptyMessage(msg.what);
+                                        bl_check = false;
+                                    }
+                                }
+
                                 //preHandler.sendEmptyMessageDelayed(msg.what,1000);
 
                             }else if(quality >= 1 && is_write){
@@ -271,6 +296,7 @@ public class CollectActivity extends BaseActivity {
                                 }
                             }else if(quality < 1 && !is_ecg_start){
                                 bl_check = true;
+                                found_ecg = false;
                                 preHandler.removeMessages(1);
                                 Log.d("test_cui_quality", "is remove ");
                                 shorts_buffer = new ArrayList<>();
@@ -345,12 +371,13 @@ public class CollectActivity extends BaseActivity {
                 //线程获取画图数据，并放入 dataList
                 while (is_write){
                     if(shorts_buffer!=null && shorts_buffer.size() > DECODE_STEP*bf_count){
-                        //每次取16317个short进行解码
+                        //每次取DECODE_STEP个short进行解码
                         short[] s = new short[DECODE_STEP];
                         for (int i = 0;i<s.length;i++){
                             s[i] = shorts_buffer.get(DECODE_STEP*(bf_count-1)+i);
                         }
                         bf_count ++;
+//                        double[] d = new double[54];
                         double[] d = fmDemod.fm_demodulation(s);
                         for(int i = 0; i< d.length;i++){
                             dataList.add(d[i]);
@@ -401,19 +428,23 @@ public class CollectActivity extends BaseActivity {
 
 
     private void initRecording() {
+
         isRecord = true;
         is_write = true;
         is_ecg_start = true;
         if (!isStart) {
+
+            //读取缓冲区数据开始画图
+            getData_draw();
+            showLoading("初始化中..");
+
             isStart = true;
             ToastUtil.showToast(context, "录音开始");
             // 开始倒计时
             countdownview.updateView();
             countdownview.addCountdownTimerListener(litener);
-            //读取缓冲区数据开始画图
-            getData_draw();
             //1s后开始画图线程
-            //preHandler.sendEmptyMessageDelayed(2,1000);
+            preHandler.sendEmptyMessageDelayed(2,2000);
         }
     }
 
