@@ -76,7 +76,7 @@ import static java.lang.Thread.sleep;
  */
 
 public class CollectActivity extends BaseActivity {
-    //    private com.gz.audio.CollectBinding binding;
+    //    private com.gz.audio.CollectBinding binding;!!!!!!!!!!!!!!!!!!!!!!!!!!
     private boolean isStart = false;
     private boolean isRecord = false;
     private boolean isback = false;
