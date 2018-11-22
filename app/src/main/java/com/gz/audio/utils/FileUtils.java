@@ -209,10 +209,12 @@ public class FileUtils {
         }
     }
     public static void saveDoubleToEdf(ArrayList<Double> doubleArrayList,String name,String tel) {
-        int edf_length = doubleArrayList.size()/300*300;
+        int record_seconds = doubleArrayList.size()/300;
+        int edf_length = record_seconds*300;
         double[] edf_data = new double[edf_length];
+        int offset = doubleArrayList.size()-edf_length;
         for(int i = 0;i<edf_length;i++){
-            edf_data[i] = doubleArrayList.get(i);
+            edf_data[i] = doubleArrayList.get(i+offset);
         }
         String path = Environment.getExternalStorageDirectory().getAbsolutePath()+ "/"  + "/" + rootPath+"/"+tel+"/edf/";
         File baseFile = new File(path);
@@ -224,7 +226,7 @@ public class FileUtils {
         try {
             file.createNewFile();
             FileOutputStream outputStream = new FileOutputStream(file);
-            Utils.writeEDF(outputStream,edf_data,new Date(), "1", true, new Date(), "jerry", edf_length/300);
+            Utils.writeEDF(outputStream,edf_data,new Date(), "1", true, new Date(), "jerry", record_seconds);
             outputStream.flush();
             outputStream.close();
         } catch (IOException e) {

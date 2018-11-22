@@ -1,17 +1,14 @@
 apply plugin: 'com.android.application'
 
 android {
-
     dataBinding {
         enabled = true
     }
-
     compileSdkVersion 26
-    buildToolsVersion '27.0.3'
-
+    buildToolsVersion '28.0.3'
     defaultConfig {
         applicationId "com.gz.audio"
-        minSdkVersion 21
+        minSdkVersion 23
         targetSdkVersion 26
         versionCode 1
         versionName "1.0"
@@ -27,8 +24,7 @@ android {
             jniLibs.srcDirs = ['libs']
         }
     }
-
-        signingConfigs {
+    signingConfigs {
         config {
             storePassword "gzvoice"
             keyAlias "voice"
@@ -36,7 +32,6 @@ android {
             storeFile file("voice.jks")
         }
     }
-
     buildTypes {
         release {
             minifyEnabled false
@@ -46,6 +41,8 @@ android {
         debug {
             signingConfig signingConfigs.config
         }
+    }
+    productFlavors {
     }
 }
 
@@ -69,7 +66,13 @@ dependencies {
     //litpal数据库框架
     compile 'org.litepal.android:core:2.0.0'
     compile 'com.google.code.gson:gson:2.6.2'
+    //for iirj
+    compile 'org.apache.commons:commons-math3:3.6.1'
     implementation files('src/main/libs/edf4j-1.0b.jar')
     implementation files('src/main/libs/FMDemodulator.jar')
-    implementation files('src/main/libs/JTransforms-3.1-with-dependencies.jar')
+    implementation files('src/main/libs/iirj-1.1.jar')
+    //    configurations.all{
+    //        transitive = false
+    //    }
+    implementation files('src/main/libs/jtransforms-2.4.jar')
 }

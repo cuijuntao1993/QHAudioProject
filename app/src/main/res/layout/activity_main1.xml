@@ -39,7 +39,8 @@
             android:id="@+id/rb_mine"
             style="@style/RadioButtonStyle"
             android:drawableTop="@drawable/btn_mine"
-            android:text="@string/mine" />
+            android:text="@string/mine"
+            android:visibility="gone"/>
 
     </RadioGroup>
 

@@ -52,6 +52,8 @@ public class TimerCountdownView extends View {
     //发起重回命令
     private int mActionHeartbeat = 1;
 
+    private boolean run = true;
+
     //间隔时间
     private int mDelayTime = 1 * 1000;
 
@@ -65,7 +67,7 @@ public class TimerCountdownView extends View {
     private Handler mHandler = new Handler() {
 
         public void handleMessage(android.os.Message msg) {
-            if (msg.what == mActionHeartbeat) {
+            if (msg.what == mActionHeartbeat && run) {
                 mMaxAngle = mMaxAngle - mRateAngle;
                 mMaxSeconds = mMaxSeconds - 1;
                 if (mMaxSeconds >= 0) {
@@ -91,7 +93,8 @@ public class TimerCountdownView extends View {
     }
 
     public void destroy() {
-        mHandler.removeMessages(100);
+        run = false;
+        mHandler.removeMessages(1);
     }
 
     @Override

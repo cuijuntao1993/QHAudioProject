@@ -37,7 +37,7 @@ public class DemoView extends View {
 	private Paint backgroudPaint;
 	private Paint backgroudBoldPaint;
 	private float plotInterval = 3.5f;
-	private int discard_points_num = 300;//don't display the first second data
+	private int discard_points_num = 0;//don't display the first second data
 
 	
 
@@ -182,7 +182,7 @@ public class DemoView extends View {
 				start_y = end_y;
 			}
 			canvas.drawLines(draw_points,mPaint);
-		}else{//exceed an period
+		}else{ //exceed an period
 			int circle_pos = display_end_pos % display_points_num;
 			if(circle_pos + interval_points_num <= display_points_num){
 				start_index=0;

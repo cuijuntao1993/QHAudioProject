@@ -3,8 +3,12 @@ package com.gz.audio.ui;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -15,6 +19,8 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
+import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -34,7 +40,9 @@ import com.gz.audio.utils.SharePreferenceUtil;
 import com.gz.audio.utils.TimeUtil;
 import com.gz.audio.utils.ToastUtil;
 import com.gz.audio.widget.TimerCountdownView;
-import com.xinheyidian.FMDemod.FMDemod;
+import com.xinheyidian.FMDemod.ZeroCrossingDemod;
+import com.xinheyidian.FMDemod.EnhancedFilter;
+import com.xinheyidian.FMDemod.QRSDetector;
 import com.xinheyidian.FMDemod.Utils;
 
 import org.json.JSONException;
@@ -92,16 +100,18 @@ public class CollectActivity extends BaseActivity {
     private long first_found_ecg_signal_time = 0;
 
     //心电图模拟
-    private xindian_backView ecgView;
     DemoView demoView;
-    ArrayList<Double> dataList,tempList,resultList;
+    ArrayList<Double> rawECG,dataList,tempList,resultList;
     int intt = 0;
     //tel
     private  String telephone;
     //loading
     private BaseProgressDialog hud;
     //实时解码sdk实例
-    private FMDemod fmDemod;
+    private ZeroCrossingDemod zrdmod;
+    private EnhancedFilter eFilter;
+    private QRSDetector qrsDetector;
+    private int fs = 300;
     //录制开始时间   录制结束时间
     private String start_time,end_time;
     ECG_Records xd_double;
@@ -111,19 +121,28 @@ public class CollectActivity extends BaseActivity {
     int bf_count = 1;
     //建立流写入文件
     DataOutputStream fos = null;
-    private int DECODE_STEP = 7938;
+    private int DECODE_STEP = 22050;
+    private int MAX_QRS_CALC_LENGTH = 300 * 5;//max length to calculate QRS
     private Timer drawTimer;
     private TimerTask drawTask;
     private float xdpi;
     private float ydpi;
 
+    private int signal_memory;
+    private TextView signal_tv;
+    private TextView tv_xin;
+    private int xinlv;
+    private ImageView signal_img;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_collect);
-        fmDemod = new FMDemod();
+        zrdmod = new ZeroCrossingDemod();
+        eFilter = new EnhancedFilter();
+        qrsDetector = new QRSDetector(fs);
         SharedPreferences sharedPreferences = getSharedPreferences(getPackageName(), Context.MODE_PRIVATE);
-        telephone = sharedPreferences.getString("telephone", "18612789735");
+        telephone = sharedPreferences.getString("telephone", "test");
         audioRecorder = AudioRecorder.getInstance();
         // 更新UI线程
         mainHanlder = new Handler(Looper.getMainLooper());
@@ -137,8 +156,6 @@ public class CollectActivity extends BaseActivity {
 
 
 
-
-
     private Handler preHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -146,18 +163,10 @@ public class CollectActivity extends BaseActivity {
             switch (msg.what) {
                 case 1:
                     //信号合格,开启录音
-
                     initRecording();
                     demoView.setResolution(xdpi,ydpi);
                     break;
                 case 2:
-//                    try {
-//                        //间隔30毫秒
-//                        sleep(1000);
-//                        } catch (InterruptedException e) {
-//                        // TODO Auto-generated catch block
-//                        e.printStackTrace();
-//                    }
                     drawTimer = new Timer();
                     demoView.setResolution(xdpi,ydpi);
                     drawTask = new TimerTask() {
@@ -172,41 +181,6 @@ public class CollectActivity extends BaseActivity {
                     };
                     drawTimer.schedule(drawTask,0,30);//start draw
 
-//                    demoView.setData(dataList);
-//                    try{
-//                        sleep(30);
-//                    }catch (InterruptedException e){
-//                        e.printStackTrace();
-//                    }
-//                    preHandler.sendEmptyMessage(2);
-//                    new Thread(new Runnable() {
-//                        @Override
-//                        public void run() {
-//                            while (is_write) {
-//                                //获取9个点
-//                                for (int index = 0; index < 9; index++) {
-//                                    //实时获取信号
-//                                    if (tempList.size() == 0 && dataList.size() > 0) {
-//                                        tempList.add(dataList.get(intt));
-//                                    } else if (dataList.size() > 0) {
-//                                        tempList.add(0, dataList.get(intt));
-//                                    }
-//                                    intt = intt + 1;
-//                                    preHandler.sendEmptyMessage(2);
-//                                    try {
-//                                        //间隔30毫秒
-//                                        sleep(30);
-//                                    } catch (InterruptedException e) {
-//                                        // TODO Auto-generated catch block
-//                                        e.printStackTrace();
-//                                    }
-//
-//                                }
-//                                //画图（待改动）
-//                                demoView.setData(tempList);
-//                            }
-//                        }
-//                    }).start();
                     break;
                 case 3:
                     drawTimer.cancel();//stop draw
@@ -225,6 +199,34 @@ public class CollectActivity extends BaseActivity {
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
+                    break;
+                case 4:
+                    switch (signal_memory){
+                        case 1://较差
+                            signal_tv.setText("较差");
+                            signal_tv.setTextColor(Color.YELLOW);
+                            signal_img.setImageResource(R.mipmap.in_01);
+                            break;
+                        case 2://较好
+                            signal_tv.setText("较好");
+                            signal_tv.setTextColor(Color.GREEN);
+                            signal_img.setImageResource(R.mipmap.in_02);
+                            break;
+                        case 3://良好
+                            signal_tv.setText("良好");
+                            signal_tv.setTextColor(Color.GREEN);
+                            signal_img.setImageResource(R.mipmap.in_03);
+                            break;
+                        case 0://无信号
+                            signal_tv.setText("无信号");
+                            signal_tv.setTextColor(Color.BLACK);
+                            signal_img.setImageResource(R.mipmap.in_0);
+                            break;
+                    }
+                    break;
+                case 5:
+                    timer.setText("結束");
+                    showRestartDialog();
                     break;
                 default:
                     break;
@@ -266,7 +268,15 @@ public class CollectActivity extends BaseActivity {
                             System.arraycopy(dataB,srcStartPos,tmpByteBuffer,curPos,tmpByteBuffer.length-curPos);
                             short[] data = BytesTransUtil.getInstance().Bytes2Shorts(tmpByteBuffer);
                             int quality = signal_quality(data);
-                            //int quality = 1;
+//                            int quality = 2;
+                            //显示信号强弱
+                            if(quality != signal_memory){
+                                signal_memory = quality;
+                                Message msg = Message.obtain();
+                                msg.what = 4;   //标志消息的标志
+                                preHandler.sendEmptyMessage(msg.what);
+                            }
+
                             if (quality >= 1 && bl_check) {
                                 //从全局池中返回一个message实例，避免多次创建message（如new Message）
                                 if(!found_ecg){
@@ -304,8 +314,44 @@ public class CollectActivity extends BaseActivity {
                             }else  if(quality < 1 && is_ecg_start){
                                 Log.d("test_cui_quality", "is finish ");
                                 isback = true;
-                                audioRecorder.stopRecord();
-                                CollectActivity.this.finish();
+                                //信号丢失判断
+                                if(null!=timer.getText().toString()) {
+                                    String[] sp = timer.getText().toString().split(":");
+                                    if (sp.length > 1) {
+                                        if (null != Integer.valueOf(sp[1])) {
+                                            if (Integer.valueOf(sp[1]) <= 20) {
+                                                //超过了10秒
+                                                isRecord = false;
+                                                is_write = false;
+                                                stopTimer();
+                                                countdownview.destroy();
+                                                shorts_buffer = null;
+                                                if (isRecord) {
+                                                    //停止录音
+                                                    audioRecorder.stopRecord();
+                                                }
+
+                                                end_time = TimeUtil.getCurrentTime(TimeUtil.TIME_FORMAT_TWO);
+                                                if (fos != null) {
+                                                    try {
+                                                        fos.flush();
+                                                        fos.close();
+                                                    } catch (IOException e) {
+                                                        e.printStackTrace();
+                                                    }
+                                                }
+                                                Message msg = Message.obtain();
+                                                msg.what = 5;   //标志消息的标志
+                                                preHandler.sendEmptyMessage(msg.what);
+                                            } else {
+                                                //不到10秒
+                                                Intent intent = getIntent();
+                                                finishthisActivity();
+                                                startActivity(intent);
+                                            }
+                                        }
+                                    }
+                                }
                             }
                             curPos=0;
                             remainSize = end - (tmpByteBuffer.length-curPos);
@@ -315,48 +361,7 @@ public class CollectActivity extends BaseActivity {
                             System.arraycopy(dataB,srcStartPos,tmpByteBuffer,curPos,remainSize);
                             curPos+=end;
                         }
-//                        if((curPos+end)<tmpByteBuffer.length){//if accumulate data less than 4096*2
-//                            System.arraycopy(dataB,0,tmpByteBuffer,curPos,end);
-//                            curPos += end;
-//                        }else{
-//                            //把byte转为short
-//                            System.arraycopy(dataB,0,tmpByteBuffer,curPos,tmpByteBuffer.length-curPos);
-//                            short[] data = BytesTransUtil.getInstance().Bytes2Shorts(dataB);
-//                            //信号持续策略
-//                            //int quality = signal_quality(data);
-//                            int quality = 1;
-//                            if (quality >= 1 && bl_check) {
-//                                //从全局池中返回一个message实例，避免多次创建message（如new Message）
-//                                bl_check = false;
-//                                Log.d("test_cui_quality", ">2 is check ");
-//                                Message msg = Message.obtain();
-//                                msg.what = 1;   //标志消息的标志
-//                                preHandler.sendEmptyMessage(msg.what);
-//                                //preHandler.sendEmptyMessageDelayed(msg.what,1000);
-//
-//                            }else if(quality >= 1 && is_write){
-//                                for (int i = 0; i < data.length;i++){
-//                                    shorts_buffer.add(data[i]);
-//                                }
-//                                try {
-//                                    fos.write(dataB);
-//                                } catch (IOException e) {
-//                                    e.printStackTrace();
-//                                }
-//                            }else if(quality < 1 && !is_ecg_start){
-//                                bl_check = true;
-//                                preHandler.removeMessages(1);
-//                                Log.d("test_cui_quality", "is remove ");
-//                                shorts_buffer = new ArrayList<>();
-//
-//                            }else  if(quality < 1 && is_ecg_start){
-//                                Log.d("test_cui_quality", "is finish ");
-//                                isback = true;
-//                                audioRecorder.stopRecord();
-//                                CollectActivity.this.finish();
-//                            }
-//
-//                        }
+
                     }
                 }
             });
@@ -370,24 +375,63 @@ public class CollectActivity extends BaseActivity {
 
                 //线程获取画图数据，并放入 dataList
                 while (is_write){
-                    if(shorts_buffer!=null && shorts_buffer.size() > DECODE_STEP*bf_count){
-                        //每次取DECODE_STEP个short进行解码
-                        short[] s = new short[DECODE_STEP];
-                        for (int i = 0;i<s.length;i++){
-                            s[i] = shorts_buffer.get(DECODE_STEP*(bf_count-1)+i);
-                        }
-                        bf_count ++;
-//                        double[] d = new double[54];
-                        double[] d = fmDemod.fm_demodulation(s);
-                        for(int i = 0; i< d.length;i++){
-                            dataList.add(d[i]);
+                    if(shorts_buffer!=null) {
+                        if (shorts_buffer.size() > DECODE_STEP*bf_count) {
+                            //每次取DECODE_STEP个short进行解码
+                            short[] s = new short[DECODE_STEP];
+                            for (int i = 0; i < s.length; i++) {
+                                s[i] = shorts_buffer.get(DECODE_STEP * (bf_count - 1) + i);
+                            }
+
+                            bf_count++;
+                            double[] d = zrdmod.process(s);
+                            if(d==null)//decode nothing out
+                                continue;
+                            for (int i = 0; i < d.length; i++) {
+                                rawECG.add(d[i]);
+                            }
+
+                            int qrs_calc_length = Math.min(MAX_QRS_CALC_LENGTH,rawECG.size());
+                            double[] qrsSeg = new double[qrs_calc_length];
+                            double heat_rate = RR_rate_cal(qrsSeg);//计算心率
+                            int offset = rawECG.size()-qrs_calc_length;
+                            for(int i =0;i<qrs_calc_length;i++){
+                                qrsSeg[i]=rawECG.get(i+offset);
+                            }
+                            int[] qrs_loc = qrsDetector.R_loc_detect(qrsSeg);
+                            double[] cur_ecg = eFilter.process(d, qrs_loc);
+                            if(cur_ecg == null)
+                                continue;
+                            for (int i = 0; i < cur_ecg.length; i++) {
+                                dataList.add(cur_ecg[i]);
+                            }
                         }
                     }
-
                 }
 
             };
         }.start();
+    }
+
+    private double RR_rate_cal(double[] qrs_loc)
+    {
+        //RR rate calculation
+        if(qrs_loc==null)
+            return -1;
+        double sum = 0;
+        if(qrs_loc.length>=4)
+        {
+            for (int i = 1; i < qrs_loc.length - 2; i++) {
+                sum = sum + (qrs_loc[i + 1] - qrs_loc[i]) / 300;
+            }
+            double RR_rate =60/( sum / (qrs_loc.length - 3));
+            return RR_rate;
+        }
+        else
+        {
+            return -1;
+        }
+
     }
 
     //信号判断
@@ -398,6 +442,7 @@ public class CollectActivity extends BaseActivity {
     private void initView() {
         //模拟心电图准备
         dataList = new ArrayList<Double>();
+        rawECG = new ArrayList<Double>();
         tempList=new ArrayList<Double>();
         resultList=new ArrayList<Double>();
         demoView = (DemoView) findViewById(R.id.demoview);
@@ -405,9 +450,11 @@ public class CollectActivity extends BaseActivity {
         // 录音钱准备倒计时
         isRecord = true;
         countdownview = findViewById(R.id.countdownview);
-        ecgView = (xindian_backView) findViewById(R.id.ecg_data_ecgView);
         back = findViewById(R.id.back);
         timer = findViewById(R.id.timer);
+        signal_tv = findViewById(R.id.signal_tv);
+        signal_img = findViewById(R.id.signal_img);
+        tv_xin = findViewById(R.id.tv_xin);
         // 录音倒计时
         int time = SharePreferenceUtil.getInt("length", 30);
 //        time = 10;
@@ -416,12 +463,7 @@ public class CollectActivity extends BaseActivity {
         back.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (isRecord) {
-                    ToastUtil.showToast(context, "录音过程中不可退出");
-//                    showStopDialog();
-                } else {
-                    finish();
-                }
+                    finishthisActivity();
             }
         });
     }
@@ -441,8 +483,13 @@ public class CollectActivity extends BaseActivity {
             isStart = true;
             ToastUtil.showToast(context, "录音开始");
             // 开始倒计时
-            countdownview.updateView();
-            countdownview.addCountdownTimerListener(litener);
+            new Handler().postDelayed(new Runnable(){
+                public void run() {
+                    //execute the task
+                    countdownview.updateView();
+                    countdownview.addCountdownTimerListener(litener);
+                }
+            }, 2000);
             //1s后开始画图线程
             preHandler.sendEmptyMessageDelayed(2,2000);
         }
@@ -465,6 +512,7 @@ public class CollectActivity extends BaseActivity {
                 //停止录音
                 audioRecorder.stopRecord();
                 timer.setText("結束");
+                stopTimer();
                 Toast.makeText(CollectActivity.this, "录音結束", Toast.LENGTH_SHORT).show();
                 end_time = TimeUtil.getCurrentTime(TimeUtil.TIME_FORMAT_TWO);
                 showSavedialog(FileUtils.getWavFileAbsolutePath(fileName,telephone));
@@ -506,35 +554,38 @@ public class CollectActivity extends BaseActivity {
             @Override
             public void onClick(View view) {
                 dialog.dismiss();
-                //保存图片
-                FileUtils.saveViewToPic(demoView,"cuitest",telephone);
-                FileUtils.saveDoubleToEdf(dataList,fileName,telephone);
-                xd_double = new ECG_Records();
-                xd_double.setPhoneNumber(telephone);
-                xd_double.setIs_uploaded(false);
-                Bitmap bitmap = FileUtils.createViewBitmap(demoView);
-                byte[] imgs = FileUtils.img(bitmap);
-                xd_double.setXinDianByShort(imgs);
-                //保存基本数据
-                xd_double.setArchive_ID(0);
-                xd_double.setStartTime(start_time);
-                xd_double.setEndTime(end_time);
-                xd_double.setDeviceType(0);
-                xd_double.setLeadsType(1);
-                xd_double.setFilePath(FileUtils.getPcmFileAbsolutePath(fileName,telephone));
-                xd_double.setFilePath("0");
-                xd_double.setDiagnose_abstract("");
-                xd_double.setDiagnose_details("");
-                xd_double.setNote("");
-                if(xd_double.save()){
-                    Toast.makeText(CollectActivity.this, "保存成功", Toast.LENGTH_SHORT).show();
-                    uploadFile();
-                }else{
-                    Toast.makeText(CollectActivity.this, "保存失败", Toast.LENGTH_SHORT).show();
-                }
-
+                saveData();
             }
         });
+    }
+    private void saveData(){
+        //保存图片
+        FileUtils.saveViewToPic(demoView,"cuitest",telephone);
+        FileUtils.saveDoubleToEdf(dataList,fileName,telephone);
+        xd_double = new ECG_Records();
+        xd_double.setPhoneNumber(telephone);
+        xd_double.setIs_uploaded(false);
+        Bitmap bitmap = FileUtils.createViewBitmap(demoView);
+        byte[] imgs = FileUtils.img(bitmap);
+        xd_double.setXinDianByShort(imgs);
+        //保存基本数据
+        xd_double.setArchive_ID(0);
+        xd_double.setStartTime(start_time);
+        xd_double.setEndTime(end_time);
+        xd_double.setDeviceType(0);
+        xd_double.setLeadsType(1);
+        xd_double.setFilePath(FileUtils.getPcmFileAbsolutePath(fileName,telephone));
+        xd_double.setFilePath("0");
+        xd_double.setDiagnose_abstract("");
+        xd_double.setDiagnose_details("");
+        xd_double.setNote("");
+        if(xd_double.save()){
+            Toast.makeText(CollectActivity.this, "保存成功", Toast.LENGTH_SHORT).show();
+            finishthisActivity();
+//                    uploadFile();
+        }else{
+            Toast.makeText(CollectActivity.this, "保存失败", Toast.LENGTH_SHORT).show();
+        }
     }
     private void showLoading(String msg) {
         hud = new mProgressDialog(this)
@@ -552,7 +603,7 @@ public class CollectActivity extends BaseActivity {
 
     }
 
-    private void showStopDialog() {
+    private void showRestartDialog() {
         final AlertDialog dialog = new AlertDialog.Builder(this).create();
         dialog.setCancelable(false);
         dialog.show();
@@ -564,102 +615,28 @@ public class CollectActivity extends BaseActivity {
         TextView cancel = (TextView) window.findViewById(R.id.save_dialog_cancel);
         TextView submit = (TextView) window.findViewById(R.id.save_dialog_submit);
 
-        submit.setText("取得取消录音退出?");
-        cancel.setText("不退出");
-        submit.setText("退出");
+        content.setText("采集信息少于30秒");
+        cancel.setText("重测");
+        submit.setText("保存");
         cancel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 dialog.dismiss();
+                Intent intent = getIntent();
+                finishthisActivity();
+                startActivity(intent);
             }
         });
         submit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 dialog.dismiss();
-                isback = true;
-                audioRecorder.stopRecord();
-                File file = new File(FileUtils.getWavFileAbsolutePath(fileName,telephone));
-                if (file.exists()) {
-                    file.delete();
-                }
-                finish();
+                saveData();
             }
         });
     }
 
     File file;
-
-    private void uploadFile() {
-        file = new File(FileUtils.getEdfFileAbsolutePath(fileName,telephone));
-        Log.d("short_length",shorts_buffer.size()+"");
-        dialog = ProgressDialog.show(this, "", "音频上传中...", false, false);
-        RequestBody fileBody = RequestBody.create(MediaType.parse("application/octet-stream"), file);
-        RequestBody requestBody = new MultipartBody.Builder()
-                .setType(MultipartBody.FORM)
-                .addFormDataPart("ecg_data", file.getName(), fileBody)
-                .addFormDataPart("user_id", FileUtils.getMD5Method(file))
-                .addFormDataPart("Archive_ID", "0")
-                .addFormDataPart("StartTime", FileUtils.getMD5Method(file))
-                .addFormDataPart("EndTime", FileUtils.getMD5Method(file))
-                .addFormDataPart("DeviceType","0")
-                .addFormDataPart("LeadsType", "1")
-                .addFormDataPart("Note","")
-                .build();
-        Request request = new Request.Builder()
-                .url("http://app.xinheyidian.com/xinheyidian/ecg/record/upload_file.do")
-                .post(requestBody)
-                .build();
-
-        final OkHttpClient.Builder httpBuilder = new OkHttpClient.Builder();
-        OkHttpClient okHttpClient = httpBuilder
-                //设置超时
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .writeTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
-                .build();
-        okHttpClient.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                LogUtil.showLog("..onFailure....." + e.toString());
-                mainHanlder.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        dialog.dismiss();
-                        ToastUtil.showToast(context, "上传失败!");
-                    }
-                });
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                dialog.dismiss();
-                final String json = response.body().string();
-                LogUtil.showLog("..onResponse.......json...." + json);
-                if (!TextUtils.isEmpty(json)) {
-                    try {
-                        JSONObject object = new JSONObject(json);
-                        if (object.has("status")) {
-                            status = object.getInt("status");
-                        }
-                        if (object.has("msg")) {
-                            msg = object.getString("msg");
-                        }
-                        if (status == 0) {
-                            //成功返回数据
-                            Message msg = new Message();
-                            msg.what = 3;
-                            msg.obj = object;
-                            preHandler.sendMessage(msg);
-
-                        }
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        });
-    }
 
     @Override
     protected void onPause() {
@@ -669,25 +646,59 @@ public class CollectActivity extends BaseActivity {
         }
     }
 
+    private void finishthisActivity(){
+        if(null!= hud){
+            hud.dismiss();
+        }
+        stopTimer();
+        countdownview.destroy();
+        shorts_buffer = null;
+        is_write = false;
+        isRecord = false;
+        if(isRecord){
+            //停止录音
+            audioRecorder.stopRecord();
+        }
+        if (fos != null) {
+            try {
+                fos.flush();
+                fos.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        CollectActivity.this.finish();
+    }
+
     @Override
     protected void onDestroy() {
-        audioRecorder.release();
-        hud.dismiss();
+        if(null!=hud){
+            hud.dismiss();
+        }
         super.onDestroy();
         shorts_buffer = null;
         is_write = false;
         isRecord = false;
-
+        if(isRecord){
+            //停止录音
+            audioRecorder.stopRecord();
+        }
+        if (fos != null) {
+            try {
+                fos.flush();
+                fos.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             if (isRecord) {
-                ToastUtil.showToast(context, "录音过程中不可退出");
-                return true;
+               finishthisActivity();
             }
-
         }
         return super.onKeyDown(keyCode, event);
     }
@@ -705,4 +716,11 @@ public class CollectActivity extends BaseActivity {
             }
         }, 2000);
     }
+    private void stopTimer(){
+        if (drawTimer != null) {
+            drawTimer.cancel();
+            drawTimer = null;
+        }
+    }
+
 }

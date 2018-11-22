@@ -21,7 +21,6 @@ import com.gz.audio.R;
 import com.gz.audio.adapter.mHistoryAdapter;
 import com.gz.audio.entiy.ECG_Records;
 import com.gz.audio.entiy.json_array_item;
-import com.gz.audio.http.HttpConst;
 import com.gz.audio.interfaces.OnViewItemListener;
 import com.gz.audio.ui.main.MainActivity1;
 import com.gz.audio.utils.IntentUtil;
@@ -150,76 +149,6 @@ public class HistoryActivity extends BaseActivity implements OnViewItemListener,
 
     @Override
     public void onItemClick(final int position) {
-//        file = new File(list.get(position).getFileaddress());
-//        if (!file.exists()) {
-//            return;
-//        }
-//        dialog = ProgressDialog.show(this, "", "音频上传中...", false, false);
-//        RequestBody fileBody = RequestBody.create(MediaType.parse("application/octet-stream"), file);
-//        RequestBody requestBody = new MultipartBody.Builder()
-//                .setType(MultipartBody.FORM)
-//                .addFormDataPart("uploadAudioFile", file.getName(), fileBody)
-//                .addFormDataPart("md5", FileUtils.getMD5Method(file))
-//                .build();
-//        Request request = new Request.Builder()
-//                .url("http://59.110.23.176:8341/upload/")
-//                .post(requestBody)
-//                .build();
-//
-//        final OkHttpClient.Builder httpBuilder = new OkHttpClient.Builder();
-//        OkHttpClient okHttpClient = httpBuilder
-//                //设置超时
-//                .connectTimeout(30, TimeUnit.SECONDS)
-//                .writeTimeout(30, TimeUnit.SECONDS)
-//                .readTimeout(30, TimeUnit.SECONDS)
-//                .build();
-//        okHttpClient.newCall(request).enqueue(new Callback() {
-//            @Override
-//            public void onFailure(Call call, IOException e) {
-//                LogUtil.showLog("..onFailure....." + e.toString());
-//                mainHanlder.post(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        dialog.dismiss();
-//                        ToastUtil.showToast(HistoryActivity.this, "上传失败!");
-//                    }
-//                });
-//            }
-//
-//            @Override
-//            public void onResponse(Call call, Response response) throws IOException {
-//                final String json = response.body().string();
-//                LogUtil.showLog("..onResponse.......json...." + json);
-//                if (!TextUtils.isEmpty(json)) {
-//                    try {
-//                        JSONObject object = new JSONObject(json);
-//                        if (object.has("status")) {
-//                            status = object.getInt("status");
-//                        }
-//                        if (object.has("msg")) {
-//                            msg = object.getString("msg");
-//                        }
-//                        mainHanlder.post(new Runnable() {
-//                            @Override
-//                            public void run() {
-//                                dialog.dismiss();
-//                                ToastUtil.showToast(HistoryActivity.this, msg);
-//                                if (status == 0) {
-//                                    if (!overList.contains(file.getName())) {
-//                                        overList.add(file.getName());
-//                                        SharePreferenceUtil.putString("over_voice_list", gson.toJson(overList));
-//                                    }
-//                                    list.get(position).setFilestatus(true);
-//                                    adapter.notifyDataSetChanged();
-//                                }
-//                            }
-//                        });
-//                    } catch (JSONException e) {
-//                        e.printStackTrace();
-//                    }
-//                }
-//            }
-//        });
 
     }
 
@@ -235,7 +164,7 @@ public class HistoryActivity extends BaseActivity implements OnViewItemListener,
                 }
             }
         }
-        uploadByCheck();
+//        uploadByCheck();
     }
 
     @Override
@@ -243,57 +172,5 @@ public class HistoryActivity extends BaseActivity implements OnViewItemListener,
 
     }
 
-    //循环发送，请求诊断结果
-    private void uploadByCheck(){
-
-            Map map = new HashMap();
-            map.put("user_id",tel);
-            map.put("record_ids",overList);
-            JSONObject object = new JSONObject(map);
-            RequestBody requestBody = RequestBody.create(HttpConst.JSON_MEDIA_TYPE, object.toString());
-
-            Request request = new Request.Builder()
-                    .url("http://app.xinheyidian.com/xinheyidian/ecg/record/query_records.do")
-                    .post(requestBody)
-                    .build();
-
-            final OkHttpClient.Builder httpBuilder = new OkHttpClient.Builder();
-            OkHttpClient okHttpClient = httpBuilder
-                    //设置超时
-                    .connectTimeout(30, TimeUnit.SECONDS)
-                    .writeTimeout(30, TimeUnit.SECONDS)
-                    .readTimeout(30, TimeUnit.SECONDS)
-                    .build();
-            okHttpClient.newCall(request).enqueue(new Callback() {
-                @Override
-                public void onFailure(Call call, IOException e) {
-                    LogUtil.showLog("..onFailure....." + e.toString());
-                }
-
-                @Override
-                public void onResponse(Call call, Response response) throws IOException {
-                    final String json = response.body().string();
-                    LogUtil.showLog("..onResponse.......json...." + json);
-                    if (!TextUtils.isEmpty(json)) {
-                        try {
-                            JSONObject object = new JSONObject(json);
-
-                            if (0 == object.getInt("status")) {
-
-                            }
-                            Message msg = new Message();
-                            msg.what = 1;
-                            msg.obj = object;
-                            handler.sendMessage(msg);
-
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    }
-
-                }
-            });
-
-    }
 
 }

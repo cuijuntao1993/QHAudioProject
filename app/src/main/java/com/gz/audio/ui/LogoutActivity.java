@@ -6,7 +6,6 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.gz.audio.R;
-import com.gz.audio.ui.login.LoginMainActivity;
 import com.gz.audio.utils.IntentUtil;
 
 
@@ -37,7 +36,7 @@ public class LogoutActivity extends BaseActivity {
         findViewById(R.id.logout_btn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                IntentUtil.startActivity(LogoutActivity.this,LoginMainActivity.class);
+
             }
         });
         findViewById(R.id.clear_cache).setOnClickListener(new View.OnClickListener() {
