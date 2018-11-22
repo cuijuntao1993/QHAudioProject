@@ -403,7 +403,7 @@ public class CollectActivity extends BaseActivity {
                             }else{
                                 xinlv = "66 BMP";
                             }
-                            Log.d("xinlv",heat_rate+"");
+                            //test
                             Log.d("xinlv",heat_rate+"");
                             int offset = rawECG.size()-qrs_calc_length;
                             for(int i =0;i<qrs_calc_length;i++){
