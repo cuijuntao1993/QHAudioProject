@@ -404,6 +404,7 @@ public class CollectActivity extends BaseActivity {
                                 xinlv = "66 BMP";
                             }
                             Log.d("xinlv",heat_rate+"");
+                            Log.d("xinlv",heat_rate+"");
                             int offset = rawECG.size()-qrs_calc_length;
                             for(int i =0;i<qrs_calc_length;i++){
                                 qrsSeg[i]=rawECG.get(i+offset);
