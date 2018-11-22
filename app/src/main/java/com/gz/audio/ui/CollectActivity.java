@@ -10,6 +10,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
+import android.os.Debug;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -131,8 +132,9 @@ public class CollectActivity extends BaseActivity {
     private int signal_memory;
     private TextView signal_tv;
     private TextView tv_xin;
-    private int xinlv;
     private ImageView signal_img;
+    //心率
+    private String xinlv;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -175,6 +177,7 @@ public class CollectActivity extends BaseActivity {
                             runOnUiThread(new Runnable() {
                                 public void run() {
                                     demoView.setData(dataList);
+                                    tv_xin.setText(xinlv);
                                 }
                             });
                         }
@@ -394,6 +397,13 @@ public class CollectActivity extends BaseActivity {
                             int qrs_calc_length = Math.min(MAX_QRS_CALC_LENGTH,rawECG.size());
                             double[] qrsSeg = new double[qrs_calc_length];
                             double heat_rate = RR_rate_cal(qrsSeg);//计算心率
+
+                            if(heat_rate == -1){
+                                xinlv = "--";
+                            }else{
+                                xinlv = "66 BMP";
+                            }
+                            Log.d("xinlv",heat_rate+"");
                             int offset = rawECG.size()-qrs_calc_length;
                             for(int i =0;i<qrs_calc_length;i++){
                                 qrsSeg[i]=rawECG.get(i+offset);
