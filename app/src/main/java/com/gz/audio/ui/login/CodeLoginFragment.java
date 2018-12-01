@@ -208,7 +208,6 @@ public class CodeLoginFragment extends BaseFragment {
                             editor.putStringValue("password", dataObj.getString("password"));
                             editor.putStringValue("smsCode", dataObj.getString("smsCode"));
                             editor.putStringValue("token", dataObj.getString("token"));
-
                             IntentUtil.startActivity(getActivity(),MainActivity1.class);
                         }
 

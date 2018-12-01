@@ -30,6 +30,7 @@ import com.gz.audio.utils.AudioRecorder;
 import com.gz.audio.utils.BytesTransUtil;
 import com.gz.audio.utils.DateUtil;
 import com.gz.audio.utils.FileUtils;
+import com.gz.audio.utils.KDSharedPreferences;
 import com.gz.audio.utils.LogUtil;
 import com.gz.audio.utils.RecordStreamListener_check;
 import com.gz.audio.utils.SharePreferenceUtil;
@@ -56,14 +57,17 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
+import okhttp3.Authenticator;
 import okhttp3.Call;
 import okhttp3.Callback;
+import okhttp3.Credentials;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.Route;
 
 //import com.xinheyidian.FMDemod.QRSDetector;
 
@@ -149,6 +153,7 @@ public class CollectActivity extends BaseActivity {
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
         xdpi = metrics.xdpi;
         ydpi = metrics.ydpi;
+
     }
 
 
@@ -731,6 +736,10 @@ public class CollectActivity extends BaseActivity {
         }
     }
     private void uploadFile() {
+        KDSharedPreferences editor = KDSharedPreferences.getInstence();
+        final String authtoken = editor.getString("token","");
+        int user_id = editor.getInt("id",0);
+
         file = new File(xd_double.getRawEDFFilePath());
         Log.d("short_length",shorts_buffer.size()+"");
         dialog = ProgressDialog.show(this, "", "音频上传中...", false, false);
@@ -738,10 +747,10 @@ public class CollectActivity extends BaseActivity {
         RequestBody requestBody = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("ecg_data", file.getName(), fileBody)
-                .addFormDataPart("user_id", FileUtils.getMD5Method(file))
+                .addFormDataPart("user_id",user_id+"")
                 .addFormDataPart("Archive_ID", "0")
-                .addFormDataPart("StartTime", FileUtils.getMD5Method(file))
-                .addFormDataPart("EndTime", FileUtils.getMD5Method(file))
+                .addFormDataPart("StartTime", start_time)
+                .addFormDataPart("EndTime", end_time)
                 .addFormDataPart("DeviceType","0")
                 .addFormDataPart("LeadsType", "1")
                 .addFormDataPart("Note","")
@@ -757,6 +766,13 @@ public class CollectActivity extends BaseActivity {
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .writeTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
+                //设置Auth
+                .authenticator(new Authenticator() {
+                    @Override
+                    public Request authenticate(Route route, Response response) throws IOException {
+                        return response.request().newBuilder().header("Authorization", authtoken).build();
+                    }
+                })
                 .build();
         okHttpClient.newCall(request).enqueue(new Callback() {
             @Override
