@@ -21,6 +21,7 @@ import com.gz.audio.ui.BaseFragment;
 import com.gz.audio.ui.main.MainActivity1;
 import com.gz.audio.utils.CountDownUtil;
 import com.gz.audio.utils.IntentUtil;
+import com.gz.audio.utils.KDSharedPreferences;
 import com.gz.audio.utils.LogUtil;
 
 import org.json.JSONException;
@@ -201,15 +202,13 @@ public class CodeLoginFragment extends BaseFragment {
 
                         if (0 == object.getInt("status")) {
                             JSONObject dataObj = object.getJSONObject("data");
-                            SharedPreferences sharedPreferences = getActivity().getSharedPreferences(getActivity().getPackageName(), Context.MODE_PRIVATE);
-                            SharedPreferences.Editor editor = sharedPreferences.edit();
-                            editor.putInt("id", dataObj.getInt("id"));
-                            editor.putString("telephone", dataObj.getString("telephone"));
-                            editor.putString("password", dataObj.getString("password"));
-                            editor.putString("smsCode", dataObj.getString("smsCode"));
-                            editor.putString("token", dataObj.getString("token"));
+                            KDSharedPreferences editor = KDSharedPreferences.getInstence();
+                            editor.putIntValue("id", dataObj.getInt("id"));
+                            editor.putStringValue("telephone", dataObj.getString("telephone"));
+                            editor.putStringValue("password", dataObj.getString("password"));
+                            editor.putStringValue("smsCode", dataObj.getString("smsCode"));
+                            editor.putStringValue("token", dataObj.getString("token"));
 
-                            editor.commit();
                             IntentUtil.startActivity(getActivity(),MainActivity1.class);
                         }
 

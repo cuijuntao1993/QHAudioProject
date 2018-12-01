@@ -208,7 +208,7 @@ public class FileUtils {
             e.printStackTrace();
         }
     }
-    public static void saveDoubleToEdf(ArrayList<Double> doubleArrayList,String name,String tel) {
+    public static String saveDoubleToEdf(ArrayList<Double> doubleArrayList,String name,String tel) {
         int record_seconds = doubleArrayList.size()/300;
         int edf_length = record_seconds*300;
         double[] edf_data = new double[edf_length];
@@ -232,6 +232,7 @@ public class FileUtils {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return file.getAbsolutePath();
     }
     public static Bitmap createViewBitmap(View view) {
         Bitmap bitmap = Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888);

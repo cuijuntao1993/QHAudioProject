@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -29,6 +30,7 @@ import com.gz.audio.utils.AudioRecorder;
 import com.gz.audio.utils.BytesTransUtil;
 import com.gz.audio.utils.DateUtil;
 import com.gz.audio.utils.FileUtils;
+import com.gz.audio.utils.LogUtil;
 import com.gz.audio.utils.RecordStreamListener_check;
 import com.gz.audio.utils.SharePreferenceUtil;
 import com.gz.audio.utils.TimeUtil;
@@ -52,6 +54,16 @@ import java.util.Date;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 //import com.xinheyidian.FMDemod.QRSDetector;
 
@@ -65,7 +77,7 @@ public class CollectActivity extends BaseActivity {
     private boolean isRecord = false;
     private boolean isback = false;
     AudioRecorder audioRecorder;
-    private String fileName;
+    private String fileName,pcmFilePath;
     private Handler mainHanlder;
     private ProgressDialog dialog;
     private int status = 1; // 0.成功  1.失败
@@ -98,7 +110,7 @@ public class CollectActivity extends BaseActivity {
     private int fs = 300;
     //录制开始时间   录制结束时间
     private String start_time,end_time;
-    ECG_Records xd_double;
+    private ECG_Records xd_double;
     private boolean is_ecg_start = false;
     //临时缓冲区buffer
     private ArrayList<Short> shorts_buffer = new ArrayList<>();
@@ -229,7 +241,7 @@ public class CollectActivity extends BaseActivity {
              耗时操作,找寻信号
              */
             //初始化录音
-            fileName = start_time = TimeUtil.getCurrentTime(TimeUtil.TIME_FORMAT_21);
+            fileName = start_time = TimeUtil.getCurrentTime(TimeUtil.TIME_FORMAT_TWO);
             audioRecorder.createDefaultAudio(fileName,telephone);
 
                 String currentFileName = fileName;
@@ -237,6 +249,7 @@ public class CollectActivity extends BaseActivity {
                 if (file.exists()) {
                     file.delete();
                 }
+            pcmFilePath = file.getAbsolutePath();
             try {
                 fos = new DataOutputStream(new FileOutputStream(file));// 建立一个可存取字节的文件
             } catch (FileNotFoundException e) {
@@ -562,27 +575,30 @@ public class CollectActivity extends BaseActivity {
     private void saveData(){
         //保存图片
         FileUtils.saveViewToPic(demoView,"cuitest",telephone);
-        FileUtils.saveDoubleToEdf(dataList,fileName,telephone);
+        String edfPath = FileUtils.saveDoubleToEdf(dataList,fileName,telephone);
         xd_double = new ECG_Records();
-        xd_double.setPhoneNumber(telephone);
+        xd_double.setPhoneNumber(telephone);//保存账户（tel）
         Bitmap bitmap = FileUtils.createViewBitmap(demoView);
         byte[] imgs = FileUtils.img(bitmap);
-        xd_double.setXinDianByShort(imgs);
+        xd_double.setXinDianByShort(imgs);//保存心电图片数据
         //保存基本数据
+        xd_double.setRecord_ID(0);
         xd_double.setArchive_ID(0);
         xd_double.setStartTime(start_time);
         xd_double.setEndTime(end_time);
         xd_double.setDeviceType(0);
         xd_double.setLeadsType(1);
-        xd_double.setFilePath(FileUtils.getPcmFileAbsolutePath(fileName,telephone));
-        xd_double.setFilePath("0");
+        xd_double.setAudioFilePath(pcmFilePath);
+        xd_double.setRawEDFFilePath(edfPath);
+        xd_double.setProcessedEDFFilePath("");
+        xd_double.setState(0);
         xd_double.setDiagnose_abstract("");
         xd_double.setDiagnose_details("");
         xd_double.setNote("");
         if(xd_double.save()){
             Toast.makeText(CollectActivity.this, "保存成功", Toast.LENGTH_SHORT).show();
             finishthisActivity();
-//                    uploadFile();
+                    uploadFile();
         }else{
             Toast.makeText(CollectActivity.this, "保存失败", Toast.LENGTH_SHORT).show();
         }
@@ -593,14 +609,6 @@ public class CollectActivity extends BaseActivity {
         hud.setCancelable(false);
         hud.show();
         scheduleDismiss();
-    }
-
-    private void save_Edf(ArrayList<Double> doubleArrayList){
-        double[] edf_data = new double[doubleArrayList.size()];
-        for(int i = 0;i<doubleArrayList.size();i++){
-            edf_data[i] = doubleArrayList.get(i);
-        }
-
     }
 
     private void showRestartDialog() {
@@ -722,5 +730,74 @@ public class CollectActivity extends BaseActivity {
             drawTimer = null;
         }
     }
+    private void uploadFile() {
+        file = new File(xd_double.getRawEDFFilePath());
+        Log.d("short_length",shorts_buffer.size()+"");
+        dialog = ProgressDialog.show(this, "", "音频上传中...", false, false);
+        RequestBody fileBody = RequestBody.create(MediaType.parse("application/octet-stream"), file);
+        RequestBody requestBody = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("ecg_data", file.getName(), fileBody)
+                .addFormDataPart("user_id", FileUtils.getMD5Method(file))
+                .addFormDataPart("Archive_ID", "0")
+                .addFormDataPart("StartTime", FileUtils.getMD5Method(file))
+                .addFormDataPart("EndTime", FileUtils.getMD5Method(file))
+                .addFormDataPart("DeviceType","0")
+                .addFormDataPart("LeadsType", "1")
+                .addFormDataPart("Note","")
+                .build();
+        Request request = new Request.Builder()
+                .url("http://app.xinheyidian.com/xinheyidian/ecg/record/upload_file.do")
+                .post(requestBody)
+                .build();
 
+        final OkHttpClient.Builder httpBuilder = new OkHttpClient.Builder();
+        OkHttpClient okHttpClient = httpBuilder
+                //设置超时
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .writeTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .build();
+        okHttpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                LogUtil.showLog("..onFailure....." + e.toString());
+                mainHanlder.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        dialog.dismiss();
+                        ToastUtil.showToast(context, "上传失败!");
+                    }
+                });
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                dialog.dismiss();
+                final String json = response.body().string();
+                LogUtil.showLog("..onResponse.......json...." + json);
+                if (!TextUtils.isEmpty(json)) {
+                    try {
+                        JSONObject object = new JSONObject(json);
+                        if (object.has("status")) {
+                            status = object.getInt("status");
+                        }
+                        if (object.has("msg")) {
+                            msg = object.getString("msg");
+                        }
+                        if (status == 0) {
+                            //成功返回数据
+                            Message msg = new Message();
+                            msg.what = 3;
+                            msg.obj = object;
+                            preHandler.sendMessage(msg);
+
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+    }
 }
