@@ -602,7 +602,6 @@ public class CollectActivity extends BaseActivity {
         xd_double.setNote("");
         if(xd_double.save()){
             Toast.makeText(CollectActivity.this, "保存成功", Toast.LENGTH_SHORT).show();
-            finishthisActivity();
                     uploadFile();
         }else{
             Toast.makeText(CollectActivity.this, "保存失败", Toast.LENGTH_SHORT).show();
