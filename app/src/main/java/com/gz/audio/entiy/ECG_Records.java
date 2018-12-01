@@ -25,6 +25,8 @@ public class ECG_Records extends LitePalSupport implements Serializable{
     private String Diagnose_details;//诊断结果详情，默认为空
     private String Note;// 备注
 
+    private String PhoneNumber;//电话号码
+    private byte[] XinDianByShort;//心电数据
     public int getId() {
         return id;
     }
@@ -121,18 +123,7 @@ public class ECG_Records extends LitePalSupport implements Serializable{
         Note = note;
     }
 
-    private String PhoneNumber;
-    private byte[] XinDianByShort;
 
-    public boolean isIs_uploaded() {
-        return is_uploaded;
-    }
-
-    public void setIs_uploaded(boolean is_uploaded) {
-        this.is_uploaded = is_uploaded;
-    }
-
-    private boolean is_uploaded;
 
 
     public String getPhoneNumber() {

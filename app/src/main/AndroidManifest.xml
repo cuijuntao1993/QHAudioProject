@@ -27,7 +27,7 @@
         android:theme="@style/AppTheme">
         <!--        <activity android:name=".ecgdemo.EcgActivity">
 -->
-        <activity android:name=".ui.main.MainActivity1">
+        <activity android:name=".ui.login.LoginMainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -39,11 +39,10 @@
         <activity android:name=".ui.SettingLengthActivity" />
         <activity android:name=".ui.CollectActivity" />
         <activity android:name=".ui.HistoryActivity" />
-        <activity android:name=".ui.login.LoginMainActivity" />
+        <activity android:name=".ui.main.MainActivity1" />
         <activity android:name=".ui.ContactActivity" />
         <activity android:name=".ui.LogoutActivity" />
         <activity android:name=".ui.XD_InFormation" />
-
 
     </application>
 </manifest>

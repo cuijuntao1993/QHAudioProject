@@ -19,7 +19,10 @@ public class ECG_Records extends LitePalSupport implements Serializable{
     private String EndTime;//采集结束时间
     private int DeviceType; //0 手持 1 胸贴
     private int LeadsType;//1
-    private String FilePath;//文件存储路径
+    private String AudioFilePath;//音频文件存储路径
+    private String RawEDFFilePath;//原始心电信号EDF文件路径
+    private String ProcessedEDFFilePath;//处理后心电信号EDF文件路径
+
     private int State;//0 未上传 1 已上传 2 已完成
     private String Diagnose_abstract;//诊断结果摘要，默认为空
     private String Diagnose_details;//诊断结果详情，默认为空
@@ -81,12 +84,28 @@ public class ECG_Records extends LitePalSupport implements Serializable{
         LeadsType = leadsType;
     }
 
-    public String getFilePath() {
-        return FilePath;
+    public String getAudioFilePath() {
+        return AudioFilePath;
     }
 
-    public void setFilePath(String filePath) {
-        FilePath = filePath;
+    public void setAudioFilePath(String audioFilePath) {
+        AudioFilePath = audioFilePath;
+    }
+
+    public String getRawEDFFilePath() {
+        return RawEDFFilePath;
+    }
+
+    public void setRawEDFFilePath(String rawEDFFilePath) {
+        RawEDFFilePath = rawEDFFilePath;
+    }
+
+    public String getProcessedEDFFilePath() {
+        return ProcessedEDFFilePath;
+    }
+
+    public void setProcessedEDFFilePath(String processedEDFFilePath) {
+        ProcessedEDFFilePath = processedEDFFilePath;
     }
 
     public int getState() {

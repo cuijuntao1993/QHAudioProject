@@ -6,21 +6,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
-import android.os.Debug;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -30,21 +25,19 @@ import com.gz.audio.entiy.ECG_Records;
 import com.gz.audio.ui.aniview.BaseProgressDialog;
 import com.gz.audio.ui.aniview.mProgressDialog;
 import com.gz.audio.ui.xindian.DemoView;
-import com.gz.audio.ui.xindian.xindian_backView;
 import com.gz.audio.utils.AudioRecorder;
 import com.gz.audio.utils.BytesTransUtil;
 import com.gz.audio.utils.DateUtil;
 import com.gz.audio.utils.FileUtils;
-import com.gz.audio.utils.LogUtil;
 import com.gz.audio.utils.RecordStreamListener_check;
 import com.gz.audio.utils.SharePreferenceUtil;
 import com.gz.audio.utils.TimeUtil;
 import com.gz.audio.utils.ToastUtil;
 import com.gz.audio.widget.TimerCountdownView;
-import com.xinheyidian.FMDemod.ZeroCrossingDemod;
 import com.xinheyidian.FMDemod.EnhancedFilter;
-import com.xinheyidian.FMDemod.QRSDetector;
+import com.xinheyidian.FMDemod.QRSDetectorPan;
 import com.xinheyidian.FMDemod.Utils;
+import com.xinheyidian.FMDemod.ZeroCrossingDemod;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -55,22 +48,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.Date;
-
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.MediaType;
-import okhttp3.MultipartBody;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import static java.lang.Thread.sleep;
+
+//import com.xinheyidian.FMDemod.QRSDetector;
 
 /**
  * Created by Liuyz on 2018/5/22.
@@ -111,7 +94,7 @@ public class CollectActivity extends BaseActivity {
     //实时解码sdk实例
     private ZeroCrossingDemod zrdmod;
     private EnhancedFilter eFilter;
-    private QRSDetector qrsDetector;
+//    private QRSDetector qrsDetector;
     private int fs = 300;
     //录制开始时间   录制结束时间
     private String start_time,end_time;
@@ -142,7 +125,7 @@ public class CollectActivity extends BaseActivity {
         setContentView(R.layout.activity_collect);
         zrdmod = new ZeroCrossingDemod();
         eFilter = new EnhancedFilter();
-        qrsDetector = new QRSDetector(fs);
+//        qrsDetector = new QRSDetector(fs);
         SharedPreferences sharedPreferences = getSharedPreferences(getPackageName(), Context.MODE_PRIVATE);
         telephone = sharedPreferences.getString("telephone", "test");
         audioRecorder = AudioRecorder.getInstance();
@@ -396,20 +379,27 @@ public class CollectActivity extends BaseActivity {
 
                             int qrs_calc_length = Math.min(MAX_QRS_CALC_LENGTH,rawECG.size());
                             double[] qrsSeg = new double[qrs_calc_length];
-                            double heat_rate = RR_rate_cal(qrsSeg);//计算心率
-
-                            if(heat_rate == -1){
-                                xinlv = "--";
-                            }else{
-                                xinlv = "66 BMP";
-                            }
-                            //test
-                            Log.d("xinlv",heat_rate+"");
                             int offset = rawECG.size()-qrs_calc_length;
                             for(int i =0;i<qrs_calc_length;i++){
                                 qrsSeg[i]=rawECG.get(i+offset);
                             }
-                            int[] qrs_loc = qrsDetector.R_loc_detect(qrsSeg);
+                            int[] qrs_loc = QRSDetectorPan.detect(qrsSeg);
+                            for(int i=0;i<qrs_loc.length;i++){
+                                qrs_loc[i]+=offset;
+                            }
+
+                            int heat_rate = RR_rate_cal(qrs_loc);//计算心率
+
+                            if(heat_rate == -1){
+                                xinlv = "--";
+                            }else{
+                                xinlv = String.valueOf(heat_rate);
+                            }
+                            //test
+                            //Log.d("xinlv",heat_rate+"");
+
+
+
                             double[] cur_ecg = eFilter.process(d, qrs_loc);
                             if(cur_ecg == null)
                                 continue;
@@ -424,19 +414,19 @@ public class CollectActivity extends BaseActivity {
         }.start();
     }
 
-    private double RR_rate_cal(double[] qrs_loc)
+    private int RR_rate_cal(int[] qrs_loc)
     {
         //RR rate calculation
         if(qrs_loc==null)
             return -1;
         double sum = 0;
-        if(qrs_loc.length>=4)
+        if(qrs_loc.length>=3)
         {
-            for (int i = 1; i < qrs_loc.length - 2; i++) {
-                sum = sum + (qrs_loc[i + 1] - qrs_loc[i]) / 300;
+            for (int i = 0; i < qrs_loc.length - 1; i++) {
+                sum = sum + (qrs_loc[i + 1] - qrs_loc[i]) / 300.0;
             }
-            double RR_rate =60/( sum / (qrs_loc.length - 3));
-            return RR_rate;
+            double RR_rate =60/( sum / (qrs_loc.length - 1));
+            return (int)Math.round(RR_rate);
         }
         else
         {
@@ -575,7 +565,6 @@ public class CollectActivity extends BaseActivity {
         FileUtils.saveDoubleToEdf(dataList,fileName,telephone);
         xd_double = new ECG_Records();
         xd_double.setPhoneNumber(telephone);
-        xd_double.setIs_uploaded(false);
         Bitmap bitmap = FileUtils.createViewBitmap(demoView);
         byte[] imgs = FileUtils.img(bitmap);
         xd_double.setXinDianByShort(imgs);
