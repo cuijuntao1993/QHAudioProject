@@ -755,7 +755,7 @@ public class CollectActivity extends BaseActivity {
                 .addFormDataPart("Note","")
                 .build();
         Request request = new Request.Builder()
-                .url("http://app.xinheyidian.com/xinheyidian/ecg/record/upload_file.do")
+                .url("http://app.xinheyidian.com/xinheyidianecg/ecg/record/upload_file.do")
                 .post(requestBody)
                 .build();
 

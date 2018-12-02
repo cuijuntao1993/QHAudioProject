@@ -47,27 +47,27 @@ android {
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
-    testCompile 'junit:junit:4.12'
-    compile 'com.android.support:appcompat-v7:26.+'
-    compile 'com.android.support:design:26.+'
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    testImplementation 'junit:junit:4.12'
+    implementation 'com.android.support:appcompat-v7:26.+'
+    implementation 'com.android.support:design:26.+'
     //  6.0 动态权限申请
-    compile 'pub.devrel:easypermissions:0.2.1'
+    implementation 'pub.devrel:easypermissions:0.2.1'
     // eventbus 时间分发
-    compile 'org.greenrobot:eventbus:3.0.0'
+    implementation 'org.greenrobot:eventbus:3.0.0'
     //    gson 解析
-    compile 'com.google.code.gson:gson:2.8.0'
+    implementation 'com.google.code.gson:gson:2.8.0'
     //    okgo  相关jar包
-    compile 'com.squareup.okhttp3:okhttp:3.8.1'
-    compile 'com.squareup.okio:okio:1.13.0'
+    implementation 'com.squareup.okhttp3:okhttp:3.8.1'
+    implementation 'com.squareup.okio:okio:1.13.0'
     // 沉浸式状态栏
-    compile 'com.gyf.barlibrary:barlibrary:2.3.0'
-    compile files('src/main/libs/achartengine-1.2.0.jar')
+    implementation 'com.gyf.barlibrary:barlibrary:2.3.0'
+    implementation files('src/main/libs/achartengine-1.2.0.jar')
     //litpal数据库框架
-    compile 'org.litepal.android:core:2.0.0'
-    compile 'com.google.code.gson:gson:2.6.2'
+    implementation 'org.litepal.android:core:2.0.0'
+    implementation 'com.google.code.gson:gson:2.6.2'
     //for iirj
-    compile 'org.apache.commons:commons-math3:3.6.1'
+    implementation 'org.apache.commons:commons-math3:3.6.1'
     implementation files('src/main/libs/edf4j-1.0b.jar')
     implementation files('src/main/libs/FMDemodulator.jar')
     implementation files('src/main/libs/iirj-1.1.jar')
