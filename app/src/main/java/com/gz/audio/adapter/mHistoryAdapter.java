@@ -53,6 +53,7 @@ public class mHistoryAdapter extends BaseAdapter {
             holder.data = (TextView) convertView.findViewById(R.id.date);
             holder.submit = (TextView) convertView.findViewById(R.id.submit);
             holder.tu_img = (ImageView) convertView.findViewById(R.id.tu_img);
+            holder.diagnose_abstract = (TextView) convertView.findViewById(R.id.diagnose_abstract);
             convertView.setTag(holder);
         } else {   //else里面说明，convertView已经被复用了，说明convertView中已经设置过tag了，即holder
             holder = (ViewHolder) convertView.getTag();
@@ -69,6 +70,11 @@ public class mHistoryAdapter extends BaseAdapter {
             holder.submit.setText("已完成");
         }
         holder.data.setText(model.getStartTime());
+        if("".equals(model.getDiagnose_abstract())){
+            holder.diagnose_abstract.setText("等待获取");
+        }else{
+            holder.diagnose_abstract.setText(model.getDiagnose_abstract());
+        }
         return convertView;
     }
 
@@ -76,7 +82,7 @@ public class mHistoryAdapter extends BaseAdapter {
         TextView data;
         TextView submit;
         ImageView tu_img;
-
+        TextView diagnose_abstract;
 
     }
 }

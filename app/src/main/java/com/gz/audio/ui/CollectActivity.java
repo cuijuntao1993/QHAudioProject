@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -135,6 +136,9 @@ public class CollectActivity extends BaseActivity {
     //心率
     private String xinlv;
 
+    //test
+    private TextView collect_add_test;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -186,13 +190,14 @@ public class CollectActivity extends BaseActivity {
 
                     break;
                 case 3:
-                    drawTimer.cancel();//stop draw
+//                    drawTimer.cancel();//stop draw
                     JSONObject jsonObject = (JSONObject) msg.obj;
                     try {
-                        if(jsonObject.getString("msg").equals("上传成功")){
+                        if(jsonObject.getString("msg").equals("记录数据成功")){
                             Toast.makeText(CollectActivity.this,jsonObject.getString("msg"),Toast.LENGTH_SHORT).show();
                             //更新本地表
-                            String Record_ID = jsonObject.getString("Record_ID");
+                            JSONObject dataObj = jsonObject.getJSONObject("data");
+                            String Record_ID = dataObj.getString("record_id");
                             xd_double.setRecord_ID(Integer.valueOf(Record_ID));
                             xd_double.setState(1);
                             xd_double.save();
@@ -474,6 +479,44 @@ public class CollectActivity extends BaseActivity {
         signal_tv = findViewById(R.id.signal_tv);
         signal_img = findViewById(R.id.signal_img);
         tv_xin = findViewById(R.id.tv_xin);
+
+        //模拟数据测试
+        collect_add_test = findViewById(R.id.collect_add_test);
+        collect_add_test.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                //保存图片
+                FileUtils.saveViewToPic(demoView,"cuitest",telephone);
+                xd_double = new ECG_Records();
+                xd_double.setPhoneNumber(telephone);//保存账户（tel）
+                Bitmap bitmap = FileUtils.createViewBitmap(demoView);
+                byte[] imgs = FileUtils.img(bitmap);
+                xd_double.setXinDianByShort(imgs);//保存心电图片数据
+                //保存基本数据
+                xd_double.setRecord_ID(0);
+                xd_double.setArchive_ID(0);
+                xd_double.setStartTime(TimeUtil.getCurrentTime(TimeUtil.TIME_FORMAT_TWO));
+                xd_double.setEndTime("2018-12-04 09:16");
+                xd_double.setDeviceType(0);
+                xd_double.setLeadsType(1);
+                xd_double.setAudioFilePath("test_pcm");
+                xd_double.setRawEDFFilePath("test_edf");
+                xd_double.setProcessedEDFFilePath("");
+                xd_double.setState(0);
+                xd_double.setDiagnose_abstract("");
+                xd_double.setDiagnose_details("");
+                xd_double.setNote("");
+                if(xd_double.save()){
+                    Toast.makeText(CollectActivity.this, "保存成功", Toast.LENGTH_SHORT).show();
+                    uploadFile();
+                }else{
+                    Toast.makeText(CollectActivity.this, "保存失败", Toast.LENGTH_SHORT).show();
+                }
+
+            }
+        });
+
         // 录音倒计时
         int time = SharePreferenceUtil.getInt("length", 30);
 //        time = 10;
@@ -739,7 +782,9 @@ public class CollectActivity extends BaseActivity {
         final String authtoken = editor.getString("token","");
         int user_id = editor.getInt("id",0);
 
-        file = new File(xd_double.getRawEDFFilePath());
+//        file = new File(xd_double.getRawEDFFilePath());
+        file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/QHCollectID/18612789735/edf/" +
+                "20181201172221.edf");
         Log.d("short_length",shorts_buffer.size()+"");
         dialog = ProgressDialog.show(this, "", "音频上传中...", false, false);
         RequestBody fileBody = RequestBody.create(MediaType.parse("application/octet-stream"), file);
@@ -747,12 +792,13 @@ public class CollectActivity extends BaseActivity {
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("ecg_data", file.getName(), fileBody)
                 .addFormDataPart("user_id",user_id+"")
-                .addFormDataPart("Archive_ID", "0")
-                .addFormDataPart("StartTime", start_time)
-                .addFormDataPart("EndTime", end_time)
-                .addFormDataPart("DeviceType","0")
-                .addFormDataPart("LeadsType", "1")
-                .addFormDataPart("Note","")
+                .addFormDataPart("archive_id", "0")
+                .addFormDataPart("start_time", xd_double.getStartTime())
+                .addFormDataPart("end_time", "2018-12-04 02:14")
+                .addFormDataPart("device_type","0")
+                .addFormDataPart("leads_type", "1")
+                .addFormDataPart("note","")
+                .addFormDataPart("token",authtoken)
                 .build();
         Request request = new Request.Builder()
                 .url("http://app.xinheyidian.com/xinheyidianecg/ecg/record/upload_file.do")

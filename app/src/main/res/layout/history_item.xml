@@ -56,6 +56,7 @@
             android:layout_marginLeft="30dp"
             android:layout_marginRight="30dp"/>
         <TextView
+            android:id="@+id/diagnose_abstract"
             android:text="未见异常"
             android:layout_width="80dp"
             android:layout_height="34dp"
