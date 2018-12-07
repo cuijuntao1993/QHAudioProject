@@ -1,17 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@mipmap/xindian_back">
+    android:orientation="vertical">
 
-    <com.gz.audio.ui.xindian.WH_ECGView
-        android:id="@+id/ecg_data_ecgView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+    <ImageView
+        android:id="@+id/blog_content"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:scaleType="center"
+        android:layout_gravity="center"
+        />
 
-    <com.gz.audio.ui.xindian.ECG_allData_View
-        android:id="@+id/allData_ecgView"
-        android:layout_alignParentBottom="true"
-        android:layout_width="match_parent"
-        android:layout_height="40dp" />
-</RelativeLayout>
+</LinearLayout>
