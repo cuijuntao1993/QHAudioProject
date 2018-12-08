@@ -11,18 +11,16 @@
         android:gravity="center"
         android:orientation="vertical">
 
-        <TextView
+        <ImageView
             android:id="@+id/save_dialog_content"
             android:layout_width="fill_parent"
-            android:layout_height="0dp"
+            android:layout_height="270dp"
             android:layout_weight="1"
+            android:scaleType="fitXY"
             android:gravity="center"
             android:lineSpacingExtra="@dimen/dp_5"
             android:padding="10dp"
-            android:scrollbars="vertical"
-            android:text="是否要保存当前录音"
-            android:textColor="@color/app_title_color"
-            android:textSize="@dimen/text_15" />
+            android:scrollbars="vertical" />
 
         <include layout="@layout/public_list_line" />
 

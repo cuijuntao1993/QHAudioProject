@@ -56,7 +56,6 @@
             android:layout_height="41dp"
             android:background="@color/history_top"
             android:textSize="15sp"
-            android:text="3/7"
             android:textColor="@color/white"
             android:gravity="center"/>
 

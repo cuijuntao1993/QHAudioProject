@@ -129,7 +129,7 @@ public class HistoryActivity extends BaseActivity implements OnViewItemListener,
         // 更新UI线程
         mainHanlder = new Handler(Looper.getMainLooper());
         KDSharedPreferences sharedPreferences = KDSharedPreferences.getInstence();
-        tel = sharedPreferences.getString("telephone", "18612789735");
+        tel = sharedPreferences.getString("telephone", "test");
         initView();
         initData();
     }

@@ -102,6 +102,7 @@ public class CollectActivity extends BaseActivity {
 
     //心电图模拟
     DemoView demoView;
+    Bitmap bitmap_view;
     ArrayList<Double> rawECG,dataList,tempList,resultList;
     int intt = 0;
     //tel
@@ -200,10 +201,13 @@ public class CollectActivity extends BaseActivity {
                             String Record_ID = dataObj.getString("record_id");
                             xd_double.setRecord_ID(Integer.valueOf(Record_ID));
                             xd_double.setState(1);
-                            xd_double.save();
+                            if(xd_double.save()){
+                                finishthisActivity();
+                            }
                         }else{
                             Toast.makeText(CollectActivity.this,jsonObject.getString("msg"),Toast.LENGTH_SHORT).show();
                         }
+
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -480,42 +484,42 @@ public class CollectActivity extends BaseActivity {
         signal_img = findViewById(R.id.signal_img);
         tv_xin = findViewById(R.id.tv_xin);
 
-        //模拟数据测试
-        collect_add_test = findViewById(R.id.collect_add_test);
-        collect_add_test.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                //保存图片
-                FileUtils.saveViewToPic(demoView,"cuitest",telephone);
-                xd_double = new ECG_Records();
-                xd_double.setPhoneNumber(telephone);//保存账户（tel）
-                Bitmap bitmap = FileUtils.createViewBitmap(demoView);
-                byte[] imgs = FileUtils.img(bitmap);
-                xd_double.setXinDianByShort(imgs);//保存心电图片数据
-                //保存基本数据
-                xd_double.setRecord_ID(0);
-                xd_double.setArchive_ID(0);
-                xd_double.setStartTime(TimeUtil.getCurrentTime(TimeUtil.TIME_FORMAT_TWO));
-                xd_double.setEndTime("2018-12-04 09:16");
-                xd_double.setDeviceType(0);
-                xd_double.setLeadsType(1);
-                xd_double.setAudioFilePath("test_pcm");
-                xd_double.setRawEDFFilePath("test_edf");
-                xd_double.setProcessedEDFFilePath("");
-                xd_double.setState(0);
-                xd_double.setDiagnose_abstract("");
-                xd_double.setDiagnose_details("");
-                xd_double.setNote("");
-                if(xd_double.save()){
-                    Toast.makeText(CollectActivity.this, "保存成功", Toast.LENGTH_SHORT).show();
-                    uploadFile();
-                }else{
-                    Toast.makeText(CollectActivity.this, "保存失败", Toast.LENGTH_SHORT).show();
-                }
-
-            }
-        });
+//        //模拟数据测试
+//        collect_add_test = findViewById(R.id.collect_add_test);
+//        collect_add_test.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//
+//                //保存图片
+//                FileUtils.saveViewToPic(demoView,"cuitest",telephone);
+//                xd_double = new ECG_Records();
+//                xd_double.setPhoneNumber(telephone);//保存账户（tel）
+//                Bitmap bitmap = FileUtils.createViewBitmap(demoView);
+//                byte[] imgs = FileUtils.img(bitmap);
+//                xd_double.setXinDianByShort(imgs);//保存心电图片数据
+//                //保存基本数据
+//                xd_double.setRecord_ID(0);
+//                xd_double.setArchive_ID(0);
+//                xd_double.setStartTime(TimeUtil.getCurrentTime(TimeUtil.TIME_FORMAT_TWO));
+//                xd_double.setEndTime("2018-12-04 09:16");
+//                xd_double.setDeviceType(0);
+//                xd_double.setLeadsType(1);
+//                xd_double.setAudioFilePath("test_pcm");
+//                xd_double.setRawEDFFilePath("test_edf");
+//                xd_double.setProcessedEDFFilePath("");
+//                xd_double.setState(0);
+//                xd_double.setDiagnose_abstract("");
+//                xd_double.setDiagnose_details("");
+//                xd_double.setNote("");
+//                if(xd_double.save()){
+//                    Toast.makeText(CollectActivity.this, "保存成功", Toast.LENGTH_SHORT).show();
+//                    uploadFile();
+//                }else{
+//                    Toast.makeText(CollectActivity.this, "保存失败", Toast.LENGTH_SHORT).show();
+//                }
+//
+//            }
+//        });
 
         // 录音倒计时
         int time = SharePreferenceUtil.getInt("length", 30);
@@ -599,8 +603,12 @@ public class CollectActivity extends BaseActivity {
         window.setBackgroundDrawableResource(R.mipmap.public_transparent_icon);
         window.setContentView(R.layout.public_save_dialog);
 
+        bitmap_view = FileUtils.createViewBitmap(demoView);
+
         TextView cancel = (TextView) window.findViewById(R.id.save_dialog_cancel);
         TextView submit = (TextView) window.findViewById(R.id.save_dialog_submit);
+        ImageView img = (ImageView) window.findViewById(R.id.save_dialog_content);
+        img.setImageBitmap(bitmap_view);
 
         cancel.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -626,8 +634,7 @@ public class CollectActivity extends BaseActivity {
         String edfPath = FileUtils.saveDoubleToEdf(dataList,fileName,telephone);
         xd_double = new ECG_Records();
         xd_double.setPhoneNumber(telephone);//保存账户（tel）
-        Bitmap bitmap = FileUtils.createViewBitmap(demoView);
-        byte[] imgs = FileUtils.img(bitmap);
+        byte[] imgs = FileUtils.img(bitmap_view);
         xd_double.setXinDianByShort(imgs);//保存心电图片数据
         //保存基本数据
         xd_double.setRecord_ID(0);
@@ -782,9 +789,9 @@ public class CollectActivity extends BaseActivity {
         final String authtoken = editor.getString("token","");
         int user_id = editor.getInt("id",0);
 
-//        file = new File(xd_double.getRawEDFFilePath());
-        file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/QHCollectID/18612789735/edf/" +
-                "20181201172221.edf");
+        file = new File(xd_double.getRawEDFFilePath());
+//        file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/QHCollectID/18612789735/edf/" +
+//                "20181201172221.edf");
         Log.d("short_length",shorts_buffer.size()+"");
         dialog = ProgressDialog.show(this, "", "音频上传中...", false, false);
         RequestBody fileBody = RequestBody.create(MediaType.parse("application/octet-stream"), file);
@@ -794,7 +801,7 @@ public class CollectActivity extends BaseActivity {
                 .addFormDataPart("user_id",user_id+"")
                 .addFormDataPart("archive_id", "0")
                 .addFormDataPart("start_time", xd_double.getStartTime())
-                .addFormDataPart("end_time", "2018-12-04 02:14")
+                .addFormDataPart("end_time", xd_double.getEndTime())
                 .addFormDataPart("device_type","0")
                 .addFormDataPart("leads_type", "1")
                 .addFormDataPart("note","")
